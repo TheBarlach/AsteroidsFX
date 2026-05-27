@@ -1,2 +1,14 @@
+dk/sdu/cbse/EnemyProcessor.class
+dk/sdu/cbse/Entity.class
+dk/sdu/cbse/Bullet.class
+dk/sdu/cbse/IPostEntityProcessorService.class
+dk/sdu/cbse/GameData.class
+dk/sdu/cbse/IGamePluginService.class
+dk/sdu/cbse/PlayerProcessor.class
 module-info.class
+dk/sdu/cbse/IEntityProcessorService.class
+dk/sdu/cbse/GameWorld.class
 dk/sdu/cbse/App.class
+dk/sdu/cbse/Player.class
+dk/sdu/cbse/App$1.class
+dk/sdu/cbse/Enemy.class
