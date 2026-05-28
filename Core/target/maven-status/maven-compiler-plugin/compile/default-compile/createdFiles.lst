@@ -1,6 +1,8 @@
 dk/sdu/cbse/CollisionProcessor.class
 dk/sdu/cbse/EnemyProcessor.class
+dk/sdu/cbse/AsteroidPlugin.class
 dk/sdu/cbse/ShootingProcessor.class
+dk/sdu/cbse/Asteroid.class
 dk/sdu/cbse/Entity.class
 dk/sdu/cbse/Bullet.class
 dk/sdu/cbse/BulletProcessor.class
@@ -14,6 +16,7 @@ dk/sdu/cbse/IEntityProcessorService.class
 dk/sdu/cbse/GameWorld.class
 dk/sdu/cbse/App.class
 dk/sdu/cbse/Player.class
+dk/sdu/cbse/AsteroidProcessor.class
 dk/sdu/cbse/PlayerPlugin.class
 dk/sdu/cbse/App$1.class
 dk/sdu/cbse/Enemy.class

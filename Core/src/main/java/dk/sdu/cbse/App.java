@@ -81,7 +81,6 @@ public class App extends Application {
         root.getChildren().removeIf(node -> world.getEntities().stream().noneMatch(entity -> entity.getView() == node));
     }
 
-
     private void loadPlugins() {
         ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
 
@@ -124,6 +123,10 @@ public class App extends Application {
             return 40;
         }
 
+        if (processor instanceof AsteroidProcessor) {
+            return 50;
+        }
+        
         return 100;
     }
 

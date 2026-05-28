@@ -10,6 +10,7 @@ public class GameWorld {
 
     private final List<Bullet> playerBullets = new ArrayList<>();
     private final List<Bullet> enemyBullets = new ArrayList<>();
+    private final List<Asteroid> asteroids = new ArrayList<>();
 
     private final List<Entity> entities = new ArrayList<>();
 
@@ -83,5 +84,19 @@ public class GameWorld {
 
     public void removeEntity(Entity entity) {
         entities.remove(entity);
+    }
+
+    public List<Asteroid> getAsteroids() {
+        return asteroids;
+    }
+
+    public void addAsteroid(Asteroid asteroid) {
+        asteroids.add(asteroid);
+        entities.add(asteroid.getEntity());
+    }
+
+    public void removeAsteroid(Asteroid asteroid) {
+        asteroids.remove(asteroid);
+        entities.remove(asteroid.getEntity());
     }
 }
