@@ -7,14 +7,14 @@ public class BulletProcessor implements IEntityProcessorService {
 
     @Override
     public void process(GameData gameData, GameWorld world) {
-        updateBullets(gameData, world.getPlayerBullets());
-        updateBullets(gameData, world.getEnemyBullets());
+        updatePlayerBullets(gameData, world);
+        updateEnemyBullets(gameData, world);
     }
 
-    private void updateBullets(GameData gameData, List<Bullet> bulletList) {
+    private void updatePlayerBullets(GameData gameData, GameWorld world) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
 
-        for (Bullet bullet : bulletList) {
+        for (Bullet bullet : world.getPlayerBullets()) {
             bullet.update(gameData.getWidth(), gameData.getHeight());
 
             if (!bullet.isAlive()) {
@@ -23,6 +23,25 @@ public class BulletProcessor implements IEntityProcessorService {
             }
         }
 
-        bulletList.removeAll(bulletsToRemove);
+        for (Bullet bullet : bulletsToRemove) {
+            world.removePlayerBullet(bullet);
+        }
+    }
+
+    private void updateEnemyBullets(GameData gameData, GameWorld world) {
+        List<Bullet> bulletsToRemove = new ArrayList<>();
+
+        for (Bullet bullet : world.getEnemyBullets()) {
+            bullet.update(gameData.getWidth(), gameData.getHeight());
+
+            if (!bullet.isAlive()) {
+                bulletsToRemove.add(bullet);
+                bullet.getEntity().setAlive(false);
+            }
+        }
+
+        for (Bullet bullet : bulletsToRemove) {
+            world.removeEnemyBullet(bullet);
+        }
     }
 }

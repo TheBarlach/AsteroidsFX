@@ -27,7 +27,9 @@ public class CollisionProcessor implements IPostEntityProcessorService {
             }
         }
 
-        world.getPlayerBullets().removeAll(bulletsToRemove);
+        for (Bullet bullet : bulletsToRemove) {
+            world.removePlayerBullet(bullet);
+        }
     }
 
     private void checkEnemyBulletsAgainstPlayer(GameData gameData, GameWorld world) {
@@ -46,6 +48,8 @@ public class CollisionProcessor implements IPostEntityProcessorService {
             }
         }
 
-        world.getEnemyBullets().removeAll(bulletsToRemove);
+        for (Bullet bullet : bulletsToRemove) {
+            world.removeEnemyBullet(bullet);
+        }
     }
 }

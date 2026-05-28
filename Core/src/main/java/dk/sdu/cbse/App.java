@@ -34,7 +34,7 @@ public class App extends Application {
             plugin.start(gameData, world);
         }
 
-        addGameObjectsToView();
+        updateView();
 
         Scene scene = new Scene(root);
 
@@ -64,25 +64,23 @@ public class App extends Application {
             processor.process(gameData, world);
         }
 
-        addGameObjectsToView();
-        addMissingBulletsToView();
-
         for (IPostEntityProcessorService processor : postEntityProcessors) {
             processor.process(gameData, world);
         }
 
-        removeDeadBulletsFromView();
+        updateView();
     }
 
-    private void addGameObjectsToView() {
-        if (world.getPlayer() != null && !root.getChildren().contains(world.getPlayer().getView())) {
-            root.getChildren().add(world.getPlayer().getView());
+    private void updateView() {
+        for (Entity entity : world.getEntities()) {
+            if (!root.getChildren().contains(entity.getView())) {
+                root.getChildren().add(entity.getView());
+            }
         }
 
-        if (world.getEnemy() != null && !root.getChildren().contains(world.getEnemy().getView())) {
-            root.getChildren().add(world.getEnemy().getView());
-        }
+        root.getChildren().removeIf(node -> world.getEntities().stream().noneMatch(entity -> entity.getView() == node));
     }
+
 
     private void loadPlugins() {
         ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
@@ -127,28 +125,6 @@ public class App extends Application {
         }
 
         return 100;
-    }
-
-    private void addMissingBulletsToView() {
-        for (Bullet bullet : world.getPlayerBullets()) {
-            if (!root.getChildren().contains(bullet.getView())) {
-                root.getChildren().add(bullet.getView());
-            }
-        }
-
-        for (Bullet bullet : world.getEnemyBullets()) {
-            if (!root.getChildren().contains(bullet.getView())) {
-                root.getChildren().add(bullet.getView());
-            }
-        }
-    }
-
-    private void removeDeadBulletsFromView() {
-        root.getChildren()
-                .removeIf(node -> world.getPlayerBullets().stream().noneMatch(bullet -> bullet.getView() == node)
-                        && world.getEnemyBullets().stream().noneMatch(bullet -> bullet.getView() == node)
-                        && node != world.getPlayer().getView()
-                        && node != world.getEnemy().getView());
     }
 
     public static void main(String[] args) {
