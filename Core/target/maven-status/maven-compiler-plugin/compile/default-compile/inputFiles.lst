@@ -4,7 +4,12 @@
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/GameWorld.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/Entity.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/EnemyProcessor.java
+/home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/ShootingProcessor.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/IEntityProcessorService.java
+/home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/BulletProcessor.java
+/home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/CollisionProcessor.java
+/home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/PlayerPlugin.java
+/home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/EnemyPlugin.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/Enemy.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/Bullet.java
 /home/lucasbarlach/AsteroidsFX/Core/src/main/java/dk/sdu/cbse/IGamePluginService.java

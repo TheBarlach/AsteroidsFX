@@ -3,7 +3,6 @@ package dk.sdu.cbse;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
@@ -18,19 +17,28 @@ public class App extends Application {
 
     private final GameWorld world = new GameWorld();
 
-    private final PlayerProcessor playerProcessor = new PlayerProcessor();
-    private final EnemyProcessor enemyProcessor = new EnemyProcessor();
-    
-    private long lastPlayerShot = 0;
-    private long lastEnemyShot = 0;
+    private final List<IEntityProcessorService> entityProcessors = new ArrayList<>();
+    private final List<IPostEntityProcessorService> postEntityProcessors = new ArrayList<>();
+    private final List<IGamePluginService> gamePlugins = new ArrayList<>();
 
     @Override
     public void start(Stage stage) {
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
         root.setStyle("-fx-background-color: black;");
 
-        world.setPlayer(new Player(gameData.getWidth() / 2.0, gameData.getHeight() / 2.0));
-        world.setEnemy(new Enemy(100, 100));
+        gamePlugins.add(new PlayerPlugin());
+        gamePlugins.add(new EnemyPlugin());
+
+        entityProcessors.add(new PlayerProcessor());
+        entityProcessors.add(new EnemyProcessor());
+        entityProcessors.add(new ShootingProcessor());
+        entityProcessors.add(new BulletProcessor());
+
+        postEntityProcessors.add(new CollisionProcessor());
+
+        for (IGamePluginService plugin : gamePlugins) {
+            plugin.start(gameData, world);
+        }
 
         root.getChildren().add(world.getPlayer().getView());
         root.getChildren().add(world.getEnemy().getView());
@@ -59,90 +67,39 @@ public class App extends Application {
     }
 
     private void update(long now) {
-        handlePlayerInput(now);
-
-        playerProcessor.process(gameData, world);
-        enemyProcessor.process(gameData, world);
-
-        handleEnemyShooting(now);
-
-        updateBullets(world.getPlayerBullets());
-        updateBullets(world.getEnemyBullets());
-
-        checkCollisions();
-    }
-
-    private void handlePlayerInput(long now) {
-        if (gameData.isKeyDown(KeyCode.SPACE)) {
-            shootPlayerBullet(now);
-        }
-    }
-
-    private void shootPlayerBullet(long now) {
-        if (now - lastPlayerShot < 300_000_000) {
-            return;
+        for (IEntityProcessorService processor : entityProcessors) {
+            processor.process(gameData, world);
         }
 
-        Bullet bullet = world.getPlayer().shoot();
-        world.addPlayerBullet(bullet);
-        root.getChildren().add(bullet.getView());
+        addMissingBulletsToView();
 
-        lastPlayerShot = now;
-    }
-
-    private void handleEnemyShooting(long now) {
-        if (now - lastEnemyShot < 1_200_000_000) {
-            return;
+        for (IPostEntityProcessorService processor : postEntityProcessors) {
+            processor.process(gameData, world);
         }
 
-        Bullet bullet = world.getEnemy().shootAt(world.getPlayer());
-        world.addEnemyBullet(bullet);
-        root.getChildren().add(bullet.getView());
-
-        lastEnemyShot = now;
+        removeDeadBulletsFromView();
     }
 
-    private void updateBullets(List<Bullet> bulletList) {
-        List<Bullet> bulletsToRemove = new ArrayList<>();
-
-        for (Bullet bullet : bulletList) {
-            bullet.update(gameData.getWidth(), gameData.getHeight());
-
-            if (!bullet.isAlive()) {
-                bulletsToRemove.add(bullet);
-                root.getChildren().remove(bullet.getView());
-            }
-        }
-
-        bulletList.removeAll(bulletsToRemove);
-    }
-
-    private void checkCollisions() {
-        List<Bullet> playerBulletsToRemove = new ArrayList<>();
-
+    private void addMissingBulletsToView() {
         for (Bullet bullet : world.getPlayerBullets()) {
-            if (bullet.getEntity().collidesWith(world.getEnemy().getEntity())) {
-                playerBulletsToRemove.add(bullet);
-                root.getChildren().remove(bullet.getView());
-
-                world.getEnemy().respawn(gameData.getWidth(), gameData.getHeight());
+            if (!root.getChildren().contains(bullet.getView())) {
+                root.getChildren().add(bullet.getView());
             }
         }
-
-        world.getPlayerBullets().removeAll(playerBulletsToRemove);
-
-        List<Bullet> enemyBulletsToRemove = new ArrayList<>();
 
         for (Bullet bullet : world.getEnemyBullets()) {
-            if (bullet.getEntity().collidesWith(world.getPlayer().getEntity())) {
-                enemyBulletsToRemove.add(bullet);
-                root.getChildren().remove(bullet.getView());
-
-                world.getPlayer().respawn(gameData.getWidth(), gameData.getHeight());
+            if (!root.getChildren().contains(bullet.getView())) {
+                root.getChildren().add(bullet.getView());
             }
         }
+    }
 
-        world.getEnemyBullets().removeAll(enemyBulletsToRemove);
+    private void removeDeadBulletsFromView() {
+        root.getChildren()
+                .removeIf(node -> world.getPlayerBullets().stream().noneMatch(bullet -> bullet.getView() == node)
+                        && world.getEnemyBullets().stream().noneMatch(bullet -> bullet.getView() == node)
+                        && node != world.getPlayer().getView()
+                        && node != world.getEnemy().getView());
     }
 
     public static void main(String[] args) {
