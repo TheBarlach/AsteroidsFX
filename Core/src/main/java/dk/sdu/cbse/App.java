@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 
 public class App extends Application {
 
@@ -26,22 +27,14 @@ public class App extends Application {
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
         root.setStyle("-fx-background-color: black;");
 
-        gamePlugins.add(new PlayerPlugin());
-        gamePlugins.add(new EnemyPlugin());
-
-        entityProcessors.add(new PlayerProcessor());
-        entityProcessors.add(new EnemyProcessor());
-        entityProcessors.add(new ShootingProcessor());
-        entityProcessors.add(new BulletProcessor());
-
-        postEntityProcessors.add(new CollisionProcessor());
+        loadPlugins();
+        loadProcessors();
 
         for (IGamePluginService plugin : gamePlugins) {
             plugin.start(gameData, world);
         }
 
-        root.getChildren().add(world.getPlayer().getView());
-        root.getChildren().add(world.getEnemy().getView());
+        addGameObjectsToView();
 
         Scene scene = new Scene(root);
 
@@ -71,6 +64,7 @@ public class App extends Application {
             processor.process(gameData, world);
         }
 
+        addGameObjectsToView();
         addMissingBulletsToView();
 
         for (IPostEntityProcessorService processor : postEntityProcessors) {
@@ -78,6 +72,61 @@ public class App extends Application {
         }
 
         removeDeadBulletsFromView();
+    }
+
+    private void addGameObjectsToView() {
+        if (world.getPlayer() != null && !root.getChildren().contains(world.getPlayer().getView())) {
+            root.getChildren().add(world.getPlayer().getView());
+        }
+
+        if (world.getEnemy() != null && !root.getChildren().contains(world.getEnemy().getView())) {
+            root.getChildren().add(world.getEnemy().getView());
+        }
+    }
+
+    private void loadPlugins() {
+        ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
+
+        for (IGamePluginService plugin : loader) {
+            gamePlugins.add(plugin);
+        }
+    }
+
+    private void loadProcessors() {
+        ServiceLoader<IEntityProcessorService> entityLoader = ServiceLoader.load(IEntityProcessorService.class);
+
+        for (IEntityProcessorService processor : entityLoader) {
+            entityProcessors.add(processor);
+        }
+
+        entityProcessors.sort((a, b) -> Integer.compare(getProcessorPriority(a), getProcessorPriority(b)));
+
+        ServiceLoader<IPostEntityProcessorService> postEntityLoader = ServiceLoader
+                .load(IPostEntityProcessorService.class);
+
+        for (IPostEntityProcessorService processor : postEntityLoader) {
+            postEntityProcessors.add(processor);
+        }
+    }
+
+    private int getProcessorPriority(IEntityProcessorService processor) {
+        if (processor instanceof PlayerProcessor) {
+            return 10;
+        }
+
+        if (processor instanceof EnemyProcessor) {
+            return 20;
+        }
+
+        if (processor instanceof ShootingProcessor) {
+            return 30;
+        }
+
+        if (processor instanceof BulletProcessor) {
+            return 40;
+        }
+
+        return 100;
     }
 
     private void addMissingBulletsToView() {
