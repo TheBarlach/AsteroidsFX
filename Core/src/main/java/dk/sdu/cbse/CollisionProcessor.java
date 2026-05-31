@@ -9,7 +9,7 @@ public class CollisionProcessor implements IPostEntityProcessorService {
     public void process(GameData gameData, GameWorld world) {
         checkPlayerBulletsAgainstEnemy(gameData, world);
         checkEnemyBulletsAgainstPlayer(gameData, world);
-        checkPlayerBulletsAgainstAsteroids(world);
+        checkPlayerBulletsAgainstAsteroids(gameData, world);
         checkEnemyBulletsAgainstAsteroids(world);
         checkPlayerAgainstAsteroids(gameData, world);
         checkEnemyAgainstAsteroids(gameData, world);
@@ -26,6 +26,8 @@ public class CollisionProcessor implements IPostEntityProcessorService {
             if (bullet.getEntity().collidesWith(world.getEnemy().getEntity())) {
                 bulletsToRemove.add(bullet);
                 bullet.getEntity().setAlive(false);
+
+                gameData.addScore(100);
 
                 world.getEnemy().respawn(gameData.getWidth(), gameData.getHeight());
             }
@@ -57,7 +59,7 @@ public class CollisionProcessor implements IPostEntityProcessorService {
         }
     }
 
-    private void checkPlayerBulletsAgainstAsteroids(GameWorld world) {
+    private void checkPlayerBulletsAgainstAsteroids(GameData gameData, GameWorld world) {
         List<Bullet> bulletsToRemove = new ArrayList<>();
         List<Asteroid> asteroidsToRemove = new ArrayList<>();
 
@@ -69,6 +71,8 @@ public class CollisionProcessor implements IPostEntityProcessorService {
 
                     bullet.getEntity().setAlive(false);
                     asteroid.getEntity().setAlive(false);
+
+                    gameData.addScore(50);
 
                     break;
                 }

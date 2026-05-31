@@ -12,6 +12,8 @@ public class GameData {
 
     private final Set<KeyCode> keys = new HashSet<>();
 
+    private int score = 0;
+
     public GameData(int width, int height) {
         this.width = width;
         this.height = height;
@@ -35,5 +37,17 @@ public class GameData {
 
     public int getHeight() {
         return height;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int points) {
+        score += points;
+    }
+
+    public void resetScore() {
+        score = 0;
     }
 }

@@ -5,6 +5,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.scene.control.Label;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +18,8 @@ public class App extends Application {
 
     private final Pane root = new Pane();
 
+    private final Label scoreLabel = new Label();
+
     private final GameWorld world = new GameWorld();
 
     private final List<IEntityProcessorService> entityProcessors = new ArrayList<>();
@@ -26,6 +30,12 @@ public class App extends Application {
     public void start(Stage stage) {
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
         root.setStyle("-fx-background-color: black;");
+
+        scoreLabel.setTextFill(Color.WHITE);
+        scoreLabel.setStyle("-fx-font-size: 20px;");
+        scoreLabel.setTranslateX(10);
+        scoreLabel.setTranslateY(10);
+        root.getChildren().add(scoreLabel);
 
         loadPlugins();
         loadProcessors();
@@ -72,13 +82,16 @@ public class App extends Application {
     }
 
     private void updateView() {
+        scoreLabel.setText("Score: " + gameData.getScore());
+
         for (Entity entity : world.getEntities()) {
             if (!root.getChildren().contains(entity.getView())) {
                 root.getChildren().add(entity.getView());
             }
         }
 
-        root.getChildren().removeIf(node -> world.getEntities().stream().noneMatch(entity -> entity.getView() == node));
+        root.getChildren().removeIf(node -> world.getEntities().stream().noneMatch(entity -> entity.getView() == node)
+                && node != scoreLabel);
     }
 
     private void loadPlugins() {
@@ -126,7 +139,7 @@ public class App extends Application {
         if (processor instanceof AsteroidProcessor) {
             return 50;
         }
-        
+
         return 100;
     }
 
