@@ -1,12 +1,18 @@
 package dk.sdu.cbse;
 
+import dk.sdu.cbse.common.Entity;
+import dk.sdu.cbse.common.GameData;
+import dk.sdu.cbse.common.GameWorld;
+import dk.sdu.cbse.common.IEntityProcessorService;
+import dk.sdu.cbse.common.IGamePluginService;
+import dk.sdu.cbse.common.IPostEntityProcessorService;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,27 +21,21 @@ import java.util.ServiceLoader;
 public class App extends Application {
 
     private final GameData gameData = new GameData(800, 600);
-
-    private final Pane root = new Pane();
-
-    private final Label scoreLabel = new Label();
-
     private final GameWorld world = new GameWorld();
 
+    private final Pane root = new Pane();
+    private final Label scoreLabel = new Label();
+
+    private final List<IGamePluginService> gamePlugins = new ArrayList<>();
     private final List<IEntityProcessorService> entityProcessors = new ArrayList<>();
     private final List<IPostEntityProcessorService> postEntityProcessors = new ArrayList<>();
-    private final List<IGamePluginService> gamePlugins = new ArrayList<>();
 
     @Override
     public void start(Stage stage) {
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
         root.setStyle("-fx-background-color: black;");
 
-        scoreLabel.setTextFill(Color.WHITE);
-        scoreLabel.setStyle("-fx-font-size: 20px;");
-        scoreLabel.setTranslateX(10);
-        scoreLabel.setTranslateY(10);
-        root.getChildren().add(scoreLabel);
+        setupScoreLabel();
 
         loadPlugins();
         loadProcessors();
@@ -58,18 +58,50 @@ public class App extends Application {
         startGameLoop();
     }
 
+    private void setupScoreLabel() {
+        scoreLabel.setTextFill(Color.WHITE);
+        scoreLabel.setStyle("-fx-font-size: 20px;");
+        scoreLabel.setTranslateX(10);
+        scoreLabel.setTranslateY(10);
+        root.getChildren().add(scoreLabel);
+    }
+
+    private void loadPlugins() {
+        ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
+
+        for (IGamePluginService plugin : loader) {
+            gamePlugins.add(plugin);
+        }
+    }
+
+    private void loadProcessors() {
+        ServiceLoader<IEntityProcessorService> entityLoader =
+                ServiceLoader.load(IEntityProcessorService.class);
+
+        for (IEntityProcessorService processor : entityLoader) {
+            entityProcessors.add(processor);
+        }
+
+        ServiceLoader<IPostEntityProcessorService> postEntityLoader =
+                ServiceLoader.load(IPostEntityProcessorService.class);
+
+        for (IPostEntityProcessorService processor : postEntityLoader) {
+            postEntityProcessors.add(processor);
+        }
+    }
+
     private void startGameLoop() {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                update(now);
+                update();
             }
         };
 
         timer.start();
     }
 
-    private void update(long now) {
+    private void update() {
         for (IEntityProcessorService processor : entityProcessors) {
             processor.process(gameData, world);
         }
@@ -77,6 +109,8 @@ public class App extends Application {
         for (IPostEntityProcessorService processor : postEntityProcessors) {
             processor.process(gameData, world);
         }
+
+        world.removeDeadEntities();
 
         updateView();
     }
@@ -90,57 +124,10 @@ public class App extends Application {
             }
         }
 
-        root.getChildren().removeIf(node -> world.getEntities().stream().noneMatch(entity -> entity.getView() == node)
-                && node != scoreLabel);
-    }
-
-    private void loadPlugins() {
-        ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
-
-        for (IGamePluginService plugin : loader) {
-            gamePlugins.add(plugin);
-        }
-    }
-
-    private void loadProcessors() {
-        ServiceLoader<IEntityProcessorService> entityLoader = ServiceLoader.load(IEntityProcessorService.class);
-
-        for (IEntityProcessorService processor : entityLoader) {
-            entityProcessors.add(processor);
-        }
-
-        entityProcessors.sort((a, b) -> Integer.compare(getProcessorPriority(a), getProcessorPriority(b)));
-
-        ServiceLoader<IPostEntityProcessorService> postEntityLoader = ServiceLoader
-                .load(IPostEntityProcessorService.class);
-
-        for (IPostEntityProcessorService processor : postEntityLoader) {
-            postEntityProcessors.add(processor);
-        }
-    }
-
-    private int getProcessorPriority(IEntityProcessorService processor) {
-        if (processor instanceof PlayerProcessor) {
-            return 10;
-        }
-
-        if (processor instanceof EnemyProcessor) {
-            return 20;
-        }
-
-        if (processor instanceof ShootingProcessor) {
-            return 30;
-        }
-
-        if (processor instanceof BulletProcessor) {
-            return 40;
-        }
-
-        if (processor instanceof AsteroidProcessor) {
-            return 50;
-        }
-
-        return 100;
+        root.getChildren().removeIf(node ->
+                node != scoreLabel
+                        && world.getEntities().stream().noneMatch(entity -> entity.getView() == node)
+        );
     }
 
     public static void main(String[] args) {
