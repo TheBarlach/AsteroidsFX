@@ -43,6 +43,10 @@ public class GameData {
         return score;
     }
 
+    public void setScore(int score) {
+        this.score = score;
+    }
+
     public void addScore(int points) {
         score += points;
     }

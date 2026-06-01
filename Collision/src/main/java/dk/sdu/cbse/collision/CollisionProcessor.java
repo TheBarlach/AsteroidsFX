@@ -11,6 +11,8 @@ import java.util.List;
 
 public class CollisionProcessor implements IPostEntityProcessorService {
 
+    private final ScoringClient scoringClient = new ScoringClient();
+
     @Override
     public void process(GameData gameData, GameWorld world) {
         checkPlayerBulletsAgainstEnemy(gameData, world);
@@ -37,7 +39,13 @@ public class CollisionProcessor implements IPostEntityProcessorService {
             if (bullet.collidesWith(enemy)) {
                 bullet.setAlive(false);
 
-                gameData.addScore(100);
+                int score = scoringClient.addScore(100);
+
+                if (score >= 0) {
+                    gameData.setScore(score);
+                } else {
+                    gameData.addScore(100);
+                }
 
                 respawnEnemy(enemy);
             }
@@ -95,7 +103,13 @@ public class CollisionProcessor implements IPostEntityProcessorService {
                     asteroid.setAlive(false);
 
                     if ("PLAYER".equals(bullet.getOwner())) {
-                        gameData.addScore(50);
+                        int score = scoringClient.addScore(50);
+
+                        if (score >= 0) {
+                            gameData.setScore(score);
+                        } else {
+                            gameData.addScore(50);
+                        }
                     }
 
                     break;

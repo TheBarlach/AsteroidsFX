@@ -25,6 +25,11 @@
             <artifactId>spring-context</artifactId>
             <version>6.1.14</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>6.1.14</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -40,7 +45,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>../libs</outputDirectory>
-                            <includeGroupIds>org.openjfx,org.springframework</includeGroupIds>
+                            <excludeGroupIds>dk.sdu.cbse</excludeGroupIds>
                         </configuration>
                     </execution>
                 </executions>

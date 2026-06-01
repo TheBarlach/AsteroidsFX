@@ -1,2 +1,3 @@
 module-info.class
 dk/sdu/cbse/collision/CollisionProcessor.class
+dk/sdu/cbse/collision/ScoringClient.class
