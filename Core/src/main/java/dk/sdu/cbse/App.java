@@ -16,6 +16,14 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import java.lang.module.Configuration;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.ServiceLoader;
 
 public class App extends Application {
@@ -30,6 +38,8 @@ public class App extends Application {
     private final List<IEntityProcessorService> entityProcessors = new ArrayList<>();
     private final List<IPostEntityProcessorService> postEntityProcessors = new ArrayList<>();
 
+    private ModuleLayer pluginLayer;
+
     @Override
     public void start(Stage stage) {
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
@@ -37,6 +47,7 @@ public class App extends Application {
 
         setupScoreLabel();
 
+        loadPluginLayer();
         loadPlugins();
         loadProcessors();
 
@@ -66,8 +77,60 @@ public class App extends Application {
         root.getChildren().add(scoreLabel);
     }
 
+    private void loadPluginLayer() {
+        try {
+            Path pluginsDir = Path.of("plugins");
+
+            if (!Files.exists(pluginsDir)) {
+                Files.createDirectories(pluginsDir);
+            }
+
+            ModuleFinder finder = ModuleFinder.of(pluginsDir);
+
+            Set<String> bootModuleNames = ModuleLayer.boot()
+                    .modules()
+                    .stream()
+                    .map(Module::getName)
+                    .collect(Collectors.toSet());
+
+            Set<String> pluginModuleNames = finder.findAll()
+                    .stream()
+                    .map(ModuleReference::descriptor)
+                    .map(descriptor -> descriptor.name())
+                    .filter(moduleName -> !bootModuleNames.contains(moduleName))
+                    .collect(Collectors.toSet());
+
+            if (pluginModuleNames.isEmpty()) {
+                pluginLayer = null;
+                return;
+            }
+
+            ModuleLayer parentLayer = ModuleLayer.boot();
+
+            Configuration configuration = parentLayer.configuration()
+                    .resolve(finder, ModuleFinder.of(), pluginModuleNames);
+
+            pluginLayer = parentLayer.defineModulesWithOneLoader(
+                    configuration,
+                    ClassLoader.getSystemClassLoader());
+
+            System.out.println("Loaded plugin modules: " + pluginModuleNames);
+        } catch (Exception exception) {
+            pluginLayer = null;
+            System.out.println("Could not load plugin layer: " + exception.getMessage());
+        }
+    }
+
     private void loadPlugins() {
-        ServiceLoader<IGamePluginService> loader = ServiceLoader.load(IGamePluginService.class);
+        gamePlugins.clear();
+
+        ServiceLoader<IGamePluginService> loader;
+
+        if (pluginLayer != null) {
+            loader = ServiceLoader.load(pluginLayer, IGamePluginService.class);
+        } else {
+            loader = ServiceLoader.load(IGamePluginService.class);
+        }
 
         for (IGamePluginService plugin : loader) {
             gamePlugins.add(plugin);
@@ -75,15 +138,28 @@ public class App extends Application {
     }
 
     private void loadProcessors() {
-        ServiceLoader<IEntityProcessorService> entityLoader =
-                ServiceLoader.load(IEntityProcessorService.class);
+        entityProcessors.clear();
+        postEntityProcessors.clear();
+
+        ServiceLoader<IEntityProcessorService> entityLoader;
+
+        if (pluginLayer != null) {
+            entityLoader = ServiceLoader.load(pluginLayer, IEntityProcessorService.class);
+        } else {
+            entityLoader = ServiceLoader.load(IEntityProcessorService.class);
+        }
 
         for (IEntityProcessorService processor : entityLoader) {
             entityProcessors.add(processor);
         }
 
-        ServiceLoader<IPostEntityProcessorService> postEntityLoader =
-                ServiceLoader.load(IPostEntityProcessorService.class);
+        ServiceLoader<IPostEntityProcessorService> postEntityLoader;
+
+        if (pluginLayer != null) {
+            postEntityLoader = ServiceLoader.load(pluginLayer, IPostEntityProcessorService.class);
+        } else {
+            postEntityLoader = ServiceLoader.load(IPostEntityProcessorService.class);
+        }
 
         for (IPostEntityProcessorService processor : postEntityLoader) {
             postEntityProcessors.add(processor);
@@ -124,10 +200,8 @@ public class App extends Application {
             }
         }
 
-        root.getChildren().removeIf(node ->
-                node != scoreLabel
-                        && world.getEntities().stream().noneMatch(entity -> entity.getView() == node)
-        );
+        root.getChildren().removeIf(node -> node != scoreLabel
+                && world.getEntities().stream().noneMatch(entity -> entity.getView() == node));
     }
 
     public static void main(String[] args) {
