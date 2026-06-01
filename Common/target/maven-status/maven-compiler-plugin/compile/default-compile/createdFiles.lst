@@ -1,0 +1,8 @@
+dk/sdu/cbse/common/EntityType.class
+dk/sdu/cbse/common/GameWorld.class
+module-info.class
+dk/sdu/cbse/common/Entity.class
+dk/sdu/cbse/common/IPostEntityProcessorService.class
+dk/sdu/cbse/common/IGamePluginService.class
+dk/sdu/cbse/common/GameData.class
+dk/sdu/cbse/common/IEntityProcessorService.class
