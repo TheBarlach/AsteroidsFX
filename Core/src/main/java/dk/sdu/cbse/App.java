@@ -13,9 +13,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-
-import java.util.ArrayList;
-import java.util.List;
+import dk.sdu.cbse.config.GameConfig;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
@@ -25,23 +24,30 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.ServiceLoader;
+import dk.sdu.cbse.services.GameServiceRegistry;
 
 public class App extends Application {
 
-    private final GameData gameData = new GameData(800, 600);
-    private final GameWorld world = new GameWorld();
+    private AnnotationConfigApplicationContext context;
+
+    private GameData gameData;
+    private GameWorld world;
 
     private final Pane root = new Pane();
     private final Label scoreLabel = new Label();
 
-    private final List<IGamePluginService> gamePlugins = new ArrayList<>();
-    private final List<IEntityProcessorService> entityProcessors = new ArrayList<>();
-    private final List<IPostEntityProcessorService> postEntityProcessors = new ArrayList<>();
+    private GameServiceRegistry serviceRegistry;
 
     private ModuleLayer pluginLayer;
 
     @Override
     public void start(Stage stage) {
+        context = new AnnotationConfigApplicationContext(GameConfig.class);
+
+        gameData = context.getBean(GameData.class);
+        world = context.getBean(GameWorld.class);
+        serviceRegistry = context.getBean(GameServiceRegistry.class);
+
         root.setPrefSize(gameData.getWidth(), gameData.getHeight());
         root.setStyle("-fx-background-color: black;");
 
@@ -51,7 +57,7 @@ public class App extends Application {
         loadPlugins();
         loadProcessors();
 
-        for (IGamePluginService plugin : gamePlugins) {
+        for (IGamePluginService plugin : serviceRegistry.getGamePlugins()) {
             plugin.start(gameData, world);
         }
 
@@ -122,8 +128,6 @@ public class App extends Application {
     }
 
     private void loadPlugins() {
-        gamePlugins.clear();
-
         ServiceLoader<IGamePluginService> loader;
 
         if (pluginLayer != null) {
@@ -133,14 +137,11 @@ public class App extends Application {
         }
 
         for (IGamePluginService plugin : loader) {
-            gamePlugins.add(plugin);
+            serviceRegistry.addGamePlugin(plugin);
         }
     }
 
     private void loadProcessors() {
-        entityProcessors.clear();
-        postEntityProcessors.clear();
-
         ServiceLoader<IEntityProcessorService> entityLoader;
 
         if (pluginLayer != null) {
@@ -150,7 +151,7 @@ public class App extends Application {
         }
 
         for (IEntityProcessorService processor : entityLoader) {
-            entityProcessors.add(processor);
+            serviceRegistry.addEntityProcessor(processor);
         }
 
         ServiceLoader<IPostEntityProcessorService> postEntityLoader;
@@ -162,7 +163,7 @@ public class App extends Application {
         }
 
         for (IPostEntityProcessorService processor : postEntityLoader) {
-            postEntityProcessors.add(processor);
+            serviceRegistry.addPostEntityProcessor(processor);
         }
     }
 
@@ -178,11 +179,11 @@ public class App extends Application {
     }
 
     private void update() {
-        for (IEntityProcessorService processor : entityProcessors) {
+        for (IEntityProcessorService processor : serviceRegistry.getEntityProcessors()) {
             processor.process(gameData, world);
         }
 
-        for (IPostEntityProcessorService processor : postEntityProcessors) {
+        for (IPostEntityProcessorService processor : serviceRegistry.getPostEntityProcessors()) {
             processor.process(gameData, world);
         }
 
@@ -202,6 +203,13 @@ public class App extends Application {
 
         root.getChildren().removeIf(node -> node != scoreLabel
                 && world.getEntities().stream().noneMatch(entity -> entity.getView() == node));
+    }
+
+    @Override
+    public void stop() {
+        if (context != null) {
+            context.close();
+        }
     }
 
     public static void main(String[] args) {
